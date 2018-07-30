@@ -1,0 +1,19 @@
+---
+- hosts: sparkSARH7
+  become: yes
+  become_method: sudo
+  tasks:
+    - name: install libselinux-python
+      yum:
+        name: libselinux-python
+        state: present
+    - name: download spark standalone
+      get_url:
+        url:  https://archive.apache.org/dist/spark/spark-2.3.1/spark-2.3.1-bin-hadoop2.7.tgz
+        dest: /opt
+    - name: copy local file to vm
+      copy:
+        src: ./files/sshpass-1.06-1.el7.x86_64.rpm
+        dest: /opt
+        owner: root
+        group: root
