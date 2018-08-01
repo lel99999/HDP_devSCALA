@@ -1,2 +1,2 @@
 [linuxhosts]
-sparkSARH7 ansible_host=192.168.60.184 ansible_ssh_user=vagrant ansible_ssh_pass=vagrant
+sparkSARH7 ansible_host=192.168.60.184

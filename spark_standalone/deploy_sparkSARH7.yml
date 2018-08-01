@@ -4,8 +4,9 @@
 #   download_url: http://download.oracle.com/otn-pub/java/jdk/8u5-b13/jdk-8u5-linux-x64.tar.gz
     download_url: http://download.oracle.com/otn-pub/java/jdk/8u181-b13/96a7b8442fe848ef90c96a2fad6ed6d1/jdk-8u181-linux-x64.tar.gz 
     download_folder: /opt
+    java_filename: jdk-8u181-linux-x64.tar.gz
     java_name: "{{download_folder}}/jdk1.8.0_181"
-    java_archive: "{{download_folder}}/jdk-8u181-linux-x64.tar.gz"
+    java_archive: "{{download_folder}}/{{ java_filename }}"
     java_home: /usr/java/jdk1.8.0_181
 
   become: yes
@@ -69,3 +70,29 @@
         src: /opt/spark-2.3.1-bin-hadoop2.7.tgz
         dest: /opt
         remote_src: yes
+    - name: pip install upgrade pip
+      shell: pip install --upgrade pip
+    - name: pip install pyspark
+      shell: pip install pyspark
+
+    - name: check zeppelin dl
+      stat:
+        path: /opt/zeppelin-0.8.0-bin-netinst.tgz
+      register: zeppelin_dl
+    - name: download zepellin
+      get_url:
+        url: http://mirror.cogentco.com/pub/apache/zeppelin/zeppelin-0.8.0/zeppelin-0.8.0-bin-netinst.tgz
+        dest: /opt
+      when: zeppelin_dl.stat.exists == False
+    - name: unarchive zeppelin
+      unarchive:
+        src: /opt/zeppelin-0.8.0-bin-netinst.tgz
+        dest: /opt
+        remote_src: yes
+      when: zeppelin_dl.stat.exists == True
+    - name: install zeppelin interpreters
+      command: 'sh /opt/zeppelin-0.8.0-bin-netinst/bin/install-interpreter.sh -a'
+#     shell: sh /opt/zeppelin-0.8.0-bin-netinst/bin/install-interpreter.sh -a
+      register: zeppelin_install
+    - debug: var=zeppelin_install.stdout_lines
+#   - debug: msg={{ zeppelin_install.stdout.split('\n')[:-1] }}
