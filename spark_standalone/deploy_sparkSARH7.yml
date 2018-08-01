@@ -6,6 +6,7 @@
     download_folder: /opt
     java_name: "{{download_folder}}/jdk1.8.0_181"
     java_archive: "{{download_folder}}/jdk-8u181-linux-x64.tar.gz"
+    java_home: /usr/java/jdk1.8.0_181
 
   become: yes
   become_method: sudo
@@ -16,42 +17,54 @@
         state: present
     - name: create directory
       file:
-        path: /opt/oarcle
+        path: /usr/java
         state: directory
         owner: root
         group: root
         mode: 0755
-    - name: create dir1
-      file: 
-        path: /opt/oracle/jdk1.8.0_181
-        state: directory
-        owner: root
-        group: root
-        mode: 0755
-
-    
+#   - name: create dir1
+#     file: 
+#       path: /opt/oracle/jdk1.8.0_181
+#       state: directory
+#       owner: root
+#       group: root
+#       mode: 0755
+    - name: check for java 8 download
+      stat: 
+        path: "{{ java_archive }}"    
+      register: java8dl
+    - debug:
+        msg: "{{ java8dl.stat.exists }}"
+   
     - name: download java 8
       get_url: url={{ download_url }} dest={{ java_archive }} headers="Cookie:' gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie'" validate_certs=no owner=root group=root mode=744 
-    - name: unpack archive
-      file: state=directory path={{ java_name }} owner=root group=root recurse=yes
+      when: java8dl.stat.exists == False
+    - name: unpack java archive
+#     file: state=directory path={{ java_name }} owner=root group=root recurse=yes
+      unarchive:
+        src: "{{ java_archive }}"
+        dest: /usr/java/
+        remote_src: yes
     - name: update alternatives
-      command: alternatives --install /usr/bin/java java {{ java_name }}/bin/java 50
+      command: alternatives --install /usr/bin/java java {{ java_home }}/bin/java 50
     - name: check if already downloaded
-      stat: path=/opt/spark-2.3.1-bin-hadoop2.7.tgz
+      stat: 
+        path: /opt/spark-2.3.1-bin-hadoop2.7.tgz
       register: spark_dl
-    - debug: msg={{ spark_dl.stdout }}
+    - debug: 
+        msg: "{{ spark_dl.stat.exists }}"
     - name: download spark standalone
       get_url:
         url:  https://archive.apache.org/dist/spark/spark-2.3.1/spark-2.3.1-bin-hadoop2.7.tgz
         dest: /opt
+      when: spark_dl.stat.exists == False
 #   - name: copy local file to vm
 #     copy:
 #       src: ./files/sshpass-1.06-1.el7.x86_64.rpm
 #       dest: /opt
 #       owner: root
 #       group: root
-      when: spark_dl.exists == False
-    - name: extract download
+    - name: extract spark download
       unarchive:
         src: /opt/spark-2.3.1-bin-hadoop2.7.tgz
         dest: /opt
